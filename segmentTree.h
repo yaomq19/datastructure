@@ -210,4 +210,131 @@ class SegmentTreeWithLazy
         }
     }
 };
+class SegmentTreeWithLazyGCD_OnlyPlusNoMultple
+{
+    public:
+    int m_n;
+    int *tree;
+    int *lazy;
+    int *data;
+    SegmentTreeWithLazyGCD_OnlyPlusNoMultple(int* a,int n):m_n(n)
+    {
+        data = a;
+        tree = new int[4*n+1];
+        lazy = new int[4*n+1];
+        for(int i=0;i<4*n+1;i++)
+        {
+            lazy[i]=0;
+        }
+        int left = 0;
+        int right = n-1;
+        build(1,left,right);
+    }
+    ~SegmentTreeWithLazyGCD_OnlyPlusNoMultple()
+    {
+        delete[] tree;
+        delete[] lazy;
+    }
+    int build(int ind_seg,int left,int right)
+    {
+        if(left == right)
+        {
+            tree[ind_seg] = data[left];
+            return tree[ind_seg];
+        }
+        int mid = (left+right) >>1;
+        tree[ind_seg] = gcd(
+            build(ind_seg * 2 ,left,mid),
+            build(ind_seg * 2 + 1,mid+1,right)
+        );
+        return tree[ind_seg];
+    }
+    //线段树中下标为ind_tree的结点维护[l,r]的区间的和值
+    void update(int ind_tree,int l,int r,int s,int t,int value)
+    {
+        if(l==s&&r==t)
+        {
+            lazy[ind_tree]+=value;
+            return;
+        }
+        int mid = (l+r)>>1;
+        if(t<=mid){
+            update(ind_tree*2,l,mid,s,t,value);
+        }else if(s>mid){
+            update(ind_tree*2+1,mid+1,r,s,t,value);
+        }else {
+            update(ind_tree*2,l,mid,s,mid,value);
+            update(ind_tree*2+1,mid+1,r,mid+1,t,value);
+        }
+    }
+    // 辗转相除法
+    int gcd(int a,int b)
+    {
+        if(a % b == 0)
+            return b;
+        else
+            return gcd(b ,a % b);
+    }
+    int handle(int ind_tree,int l,int r)
+    {
+        if(l==r)
+        {
+            tree[ind_tree]+=lazy[ind_tree];
+            lazy[ind_tree]=0;
+            return tree[ind_tree];
+        }else{
+            lazy[ind_tree*2]+=lazy[ind_tree];
+            lazy[ind_tree*2+1]+=lazy[ind_tree];
+            lazy[ind_tree]=0;
+            int mid=(l+r)>>1;
+            tree[ind_tree] = gcd(
+                handle(ind_tree*2,l,mid),
+                handle(ind_tree*2+1,mid+1,r)
+            );
+            return tree[ind_tree];
+        }
+    }
+    int query(int ind_tree,int l,int r,int s,int t)
+    {
+        if(l==s && r ==t){
+            handle(ind_tree,l,r);
+            //print();
+            return tree[ind_tree];
+        }
+        lazy[ind_tree*2]+=lazy[ind_tree];
+        lazy[ind_tree*2+1]+=lazy[ind_tree];
+        lazy[ind_tree]=0;
+        //print();
+        int mid = (l+r)>>1;
+        if(t<=mid){
+            int temp=query(ind_tree*2,l,mid,s,t);
+            return temp;
+        }else if(s>mid){
+            int temp=query(ind_tree*2+1,mid+1,r,s,t);
+            return temp;
+        }else{
+            int temp=gcd(
+                query(ind_tree*2,l,mid,s,mid),
+                query(ind_tree*2+1,mid+1,r,mid+1,t)
+            );
+            return temp;
+        }
+    }
+    void print()
+    {
+        print(1,0,m_n-1);
+        cout<<endl;
+    }
+    void print(int ind,int l,int r)
+    {
+        cout<<"tree["<<ind<<"] = "<<tree[ind]<<" ";
+        cout<<"lazy["<<ind<<"] = "<<lazy[ind]<<endl;
+        if(l==r)return;
+        else{
+            int mid = (l+r)>>1;
+            print(ind*2,l,mid);
+            print(ind*2+1,mid+1,r);
+        }
+    }
+};
 #endif
