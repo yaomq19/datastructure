@@ -1,5 +1,7 @@
 #ifndef SEGMENTTREE_H
 #define SEGMENTTREE_H
+#include <bits/stdc++.h>
+using namespace std;
 class SegmentTree
 {
     public:
@@ -73,10 +75,11 @@ bool mycmp(const Operation& a,const Operation&b)
 class SegmentTreeWithLazy
 {
     public:
+    int m_n;
     int *tree;
     vector<Operation> *lazy;
     int *data;
-    SegmentTree(int* a,int n)
+    SegmentTreeWithLazy(int* a,int n):m_n(n)
     {
         data = a;
         tree = new int[4*n+1];
@@ -85,7 +88,7 @@ class SegmentTreeWithLazy
         int right = n-1;
         build(1,left,right);
     }
-    ~SegmentTree()
+    ~SegmentTreeWithLazy()
     {
         delete[] tree;
     }
@@ -104,6 +107,7 @@ class SegmentTreeWithLazy
     //线段树中下标为ind_tree的结点维护[l,r]的区间的和值
     void update(int ord,int ind_tree,int l,int r,int s,int t,int value,char op)
     {
+        //print();
         if(l==s&&r==t)
         {
             lazy[ind_tree].push_back(Operation(ord,op,value));
@@ -115,14 +119,15 @@ class SegmentTreeWithLazy
         }else if(s>mid){
             update(ord,ind_tree*2+1,mid+1,r,s,t,value,op);
         }else {
-            update(ord,ind_tree*2,l,mid,s,t,value,op);
-            update(ord,ind_tree*2+1,mid+1,r,s,t,value,op);
+            update(ord,ind_tree*2,l,mid,s,mid,value,op);
+            update(ord,ind_tree*2+1,mid+1,r,mid+1,t,value,op);
         }
+        //print();
     }
-    int query(int ind_tree,int l,int r,int s,int t)
+    int handle(int ind_tree,int l,int r)
     {
-        if(l==s && r ==t){
-            //handle and change tree[ind_tree];
+        if(l==r)
+        {
             sort(lazy[ind_tree].begin(),lazy[ind_tree].end(),mycmp);
             for(auto &it:lazy[ind_tree])
             {
@@ -133,6 +138,29 @@ class SegmentTreeWithLazy
                 }
             }
             lazy[ind_tree].clear();
+            return tree[ind_tree];
+        }else{
+            lazy[ind_tree*2].insert(
+                lazy[ind_tree*2].end(),
+                lazy[ind_tree].begin(),
+                lazy[ind_tree].end()
+            );
+            lazy[ind_tree*2+1].insert(
+                lazy[ind_tree*2+1].end(),
+                lazy[ind_tree].begin(),
+                lazy[ind_tree].end()
+            );
+            lazy[ind_tree].clear();
+            int mid=(l+r)>>1;
+            tree[ind_tree] =  handle(ind_tree*2,l,mid)
+            +handle(ind_tree*2+1,mid+1,r);
+            return tree[ind_tree];
+        }
+    }
+    int query(int ind_tree,int l,int r,int s,int t)
+    {
+        if(l==s && r ==t){
+            handle(ind_tree,l,r);
             return tree[ind_tree];
         }
         int mid = (l+r)>>1;
@@ -148,12 +176,37 @@ class SegmentTreeWithLazy
             );
             lazy[ind_tree].clear();
         if(t<=mid){
-            return query(ind_tree*2,l,mid,s,t);
+            int temp=query(ind_tree*2,l,mid,s,t);
+            return temp;
         }else if(s>mid){
-            return query(ind_tree*2+1,mid+1,r,s,t);
+            int temp=query(ind_tree*2+1,mid+1,r,s,t);
+            return temp;
         }else{
-            return query(ind_tree*2,l,mid,s,mid)
+            int temp=query(ind_tree*2,l,mid,s,mid)
             + query(ind_tree*2+1,mid+1,r,mid+1,t);
+            return temp;
+        }
+    }
+    void print()
+    {
+        print(1,0,m_n-1);
+        cout<<endl;
+    }
+    void print(int ind,int l,int r)
+    {
+        cout<<"tree["<<ind<<"] = "<<tree[ind]<<endl;
+        if(!lazy[ind].empty()){
+            cout<<"lazy["<<ind<<"] = ";
+        }
+        for(auto &it:lazy[ind])
+        {
+            cout<<it.order<<"th:"<<it.op<<it.v<<endl;
+        }
+        if(l==r)return;
+        else{
+            int mid = (l+r)>>1;
+            print(ind*2,l,mid);
+            print(ind*2+1,mid+1,r);
         }
     }
 };
